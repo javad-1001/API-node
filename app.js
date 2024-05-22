@@ -31,17 +31,20 @@ connection.connect(function(err) {
 
 app.post('/api/addUser',
     (req, res) => {
-        var response = ""
-        var post  = {username: req.body.username, password: req.body.password, phone: req.body.phone};
-        var query = connection.query("INSERT INTO `userss` SET ?",post,  function(err, result) { 
-           
-            
-        });
-        console.log(query.err);
-        //if (query.err) throw query.err;
-        //res.send(results[0].solution);
-       
-        res.send(response);
+      const { strPassword, iMobileNumber, strName, strFamily, iRole, bActive } = req.body;
+
+      const insertQuery = `INSERT INTO users (strPassword, iMobileNumber, strName, strFamily, iRole, bActive) VALUES (?, ?, ?, ?, ?, ?)`;
+      const values = [strPassword, iMobileNumber, strName, strFamily, iRole, bActive];
+    
+      connection.query(insertQuery, values, (err, result) => {
+        if (err) {
+          console.error(err);
+          return res.status(500).send('Failed to insert user');
+        }
+        
+        res.status(201).send('User inserted successfully');
+      });
+      
     });
 
 
