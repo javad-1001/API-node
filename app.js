@@ -63,6 +63,86 @@ app.post('/login_admin', (req, res) => {
   });
 });
 
+
+app.post('/addProduct', (req, res) => {
+  var product  = {
+    strTitle: req.body.strTitle,
+    sreDetail: req.body.sreDetail,
+    fWeight: req.body.fWeight,
+    fHeight: req.body.fHeight,
+    iPrice: req.body.iPrice,
+    strImage: req.body.strImage,
+    strSummery: req.body.strSummery,
+    iCode: req.body.iCode,
+    bActive: req.body.bActive,
+    iCategory: req.body.iCategory
+    };
+  var query = "INSERT INTO `products` SET ?"
+  connection.query(query,product, (error, results, fields) => {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Failed to add a new row with default values');
+    } else {
+      res.status(200).send('Row with default values added successfully');
+    }
+  });
+});
+
+app.put('/editProduct/:iProduct', (req, res) => {
+  const iProduct = req.params.iProduct;
+
+  const updatedProduct = {
+    strTitle: req.body.strTitle,
+    sreDetail: req.body.sreDetail,
+    fWeight: req.body.fWeight,
+    fHeight: req.body.fHeight,
+    iPrice: req.body.iPrice,
+    strImage: req.body.strImage,
+    strSummery: req.body.strSummery,
+    iCode: req.body.iCode,
+    bActive: req.body.bActive,  
+    iCategory: req.body.iCategory
+  };
+
+  const query = "UPDATE products SET ? WHERE iProduct = ?";
+  connection.query(query, [updatedProduct, iProduct], (error, results, fields) => {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Failed to update the product');
+    } else {
+      res.status(200).send('Product updated successfully');
+    }
+  });
+});
+
+app.post('/deleteProduct', (req, res) => {
+  var product  = {
+    iProduct: req.body.iProduct
+    };
+  var query = "DELETE FROM products WHERE products.?"
+  connection.query(query,product, (error, results, fields) => {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Failed to delete a new row with default values');
+    } else {
+      res.status(200).send('Row with default values deleted successfully');
+    }
+  });
+});
+
+// app.post('/addDefaultRow', (req, res) => {
+//   const query = `INSERT INTO products (iProduct, strTitle, sreDetail, strImage, fWeight, fHeight, iPrice, strSummery, iCode, bActive, iCategory) VALUES (NULL, 'test', 'test', 'test', 3.2, 3333, 44, 'test', 1, 1, 5)`;
+
+//   connection.query(query, (error, results, fields) => {
+//     if (error) {
+//       console.error(error);
+//       res.status(500).send('Failed to add a new row with default values');
+//     } else {
+//       res.status(200).send('Row with default values added successfully');
+//     }
+//   });
+// });
+
 // app.post('/api/addUser',
 //   (req, res) => {
 //     const { strPassword, iMobileNumber, strName, strFamily, iRole, bActive } = req.body;
