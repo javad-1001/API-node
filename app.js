@@ -1,5 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const jwt = require('jsonwebtoken');
+
 var cors = require('cors')
 
 const app = express();
@@ -25,6 +27,7 @@ var connection = mysql.createConnection({
   password: 'javad',
   database: 'behdood_db'
 });
+const jwtSecret = 'your_secret_key';
 
 connection.connect(function (err) {
   // connected! (unless `err` is set)
@@ -44,7 +47,7 @@ app.get('/getAllProducts', (req, res) => {
   });
 });
 
-app.post('/login_admin', (req, res) => {
+app.post('/login', (req, res) => {
   const { strUsername, strPassword } = req.body;
 
   const query = `SELECT * FROM user_admin WHERE strUsername = ? AND strPassword = ?`;
@@ -56,13 +59,51 @@ app.post('/login_admin', (req, res) => {
     }
 
     if (results.length > 0) {
-      res.status(200).json({ result: true, message: 'Login successful' });
+      // User found, return success response with user ID
+      const user = results[0];
+      res.status(200).json({
+         result: true,
+          message: 'Login successful', 
+          id: user.id ,
+          strToken: user.strToken,
+          strMobile: user.strMobile,
+          strName: user.strName,
+          strFamily: user.strFamily,
+        });
     } else {
+      // User not found, return error response
       res.status(401).json({ result: false, error: 'Invalid credentials' });
     }
   });
 });
 
+
+
+
+app.post('/addUser', (req, res) => {
+  var user  = {
+    strMobile: req.body.strMobile,
+    strName: req.body.strName,
+    strUsername: req.body.strUsername,
+    strPassword: req.body.strPassword,
+    strFamily: req.body.strFamily,
+    };
+  var query = "INSERT INTO `user_admin` SET ?"
+  connection.query(query,user, (error, results, fields) => {
+    if (error) {
+      res.status(500).send('Failed to add a new row with default values');
+    } else {
+      res.status(200).json({
+        result: true,
+         message: 'sign up successful', 
+         id: user.id ,
+         strToken: user.strToken,
+         strMobile: user.strMobile,
+         strName: user.strName,
+         strFamily: user.strFamily,
+       });    }
+  });
+});
 
 app.post('/addProduct', (req, res) => {
   var product  = {
