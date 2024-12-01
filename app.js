@@ -8,124 +8,110 @@ const app = express();
 
 const PORT = 5000;
 
+
 app.use(bodyParser.json());
 
 
 app.use(cors())
 
 
-// query for add user
-//INSERT INTO `users` (`id`, `username`, `password`, `phone`) VALUES (NULL, 'javad', '1234', '09123456789'); 
-
-
-
 var mysql = require('mysql');
 const e = require('express');
+
+
+
+
+
+
 var connection = mysql.createConnection({
   host: 'localhost',
   user: 'javad',
   password: 'javad',
-  database: 'behdood_db'
-});
-const jwtSecret = 'your_secret_key';
-
-connection.connect(function (err) {
-  // connected! (unless `err` is set)
-});
-
-
-app.get('/getAllProducts', (req, res) => {
-  const query = 'SELECT * FROM products';
-
-  connection.query(query, (error, results) => {
-    if (error) {
-      res.status(500).json({ error: error.message });
-      return;
-    }
-
-    res.json(results);
-  });
+  database: 'qrond'
 });
 
 app.post('/login', (req, res) => {
   const { strUsername, strPassword } = req.body;
-
   const query = `SELECT * FROM user_admin WHERE strUsername = ? AND strPassword = ?`;
-
   connection.query(query, [strUsername, strPassword], (error, results) => {
     if (error) {
       res.status(500).json({ error: 'Database error' });
       return;
     }
-
     if (results.length > 0) {
-      // User found, return success response with user ID
       const user = results[0];
+      // Generate a JWT token
+      const token = jwt.sign({ id: user.id }, 'your_secret_key', { expiresIn: '1h' });
       res.status(200).json({
-         result: true,
-          message: 'Login successful', 
-          id: user.id ,
-          strToken: user.strToken,
-          strMobile: user.strMobile,
-          strName: user.strName,
-          strFamily: user.strFamily,
-        });
+        result: true,
+        message: 'Login successful',
+        id: user.id,
+        strToken: token, // Send the generated token
+        strMobile: user.strMobile,
+        strName: user.strName,
+        strFamily: user.strFamily,
+        
+      });
     } else {
-      // User not found, return error response
       res.status(401).json({ result: false, error: 'Invalid credentials' });
     }
   });
 });
 
 
+// app.post('/login', (req, res) => {
+//   const { strUsername, strPassword } = req.body;
+//   const query = `SELECT * FROM user_admin WHERE strUsername = ? AND strPassword = ?`;
+//   connection.query(query, [strUsername, strPassword], (error, results) => {
+//     if (error) {
+//       res.status(500).json({ error: 'Database error' });
+//       return;
+//     }
+//     if (results.length > 0) {
+//       const user = results[0];
+//       res.status(200).json({
+//          result: true,
+//           message: 'Login successful', 
+//           id: user.id ,
+//           strToken: user.strToken,
+//           strMobile: user.strMobile,
+//           strName: user.strName,
+//           strFamily: user.strFamily,
+//         });
+//     } else {
+//       res.status(401).json({ result: false, error: 'Invalid credentials' });
+//     }
+//   });
+// });
 
-
-app.post('/addUser', (req, res) => {
-  var user  = {
-    strMobile: req.body.strMobile,
-    strName: req.body.strName,
-    strUsername: req.body.strUsername,
-    strPassword: req.body.strPassword,
-    strFamily: req.body.strFamily,
-    };
-  var query = "INSERT INTO `user_admin` SET ?"
-  connection.query(query,user, (error, results, fields) => {
+app.post('/addProduct', (req, res) => {
+  const {  iSellerId, strToken, strMobile, strMobileSchema, iPrice, strPreNumber, bActive, tiOperator, tiStatus, tiType, tiCondition } = req.body;
+  const query = `SELECT * FROM user_admin WHERE iSellerId = ? AND strToken = ?`;
+  connection.query(query, [iSellerId, strToken], (error, results) => {
     if (error) {
-      res.status(500).send('Failed to add a new row with default values');
-    } else {
+      res.status(500).json({ error: 'Database error' });
+      return;
+    }
+    if (results.length > 0) {
       res.status(200).json({
-        result: true,
-         message: 'sign up successful', 
-         id: user.id ,
-         strToken: user.strToken,
-         strMobile: user.strMobile,
-         strName: user.strName,
-         strFamily: user.strFamily,
-       });    }
+         result: true,
+          message: 'auth successful', 
+        });
+    } else {
+      res.status(401).json({ result: false, error: 'Invalid credentials' });
+    }
   });
 });
 
-app.post('/addProduct', (req, res) => {
-  var product  = {
-    strTitle: req.body.strTitle,
-    sreDetail: req.body.sreDetail,
-    fWeight: req.body.fWeight,
-    fHeight: req.body.fHeight,
-    iPrice: req.body.iPrice,
-    strImage: req.body.strImage,
-    strSummery: req.body.strSummery,
-    iCode: req.body.iCode,
-    bActive: req.body.bActive,
-    iCategory: req.body.iCategory
-    };
-  var query = "INSERT INTO `products` SET ?"
-  connection.query(query,product, (error, results, fields) => {
+
+app.get('/getAllProducts', (req, res) => {
+  const query = 'SELECT * FROM products';
+  connection.query(query, (error, results) => {
     if (error) {
-      console.error(error);
-      res.status(500).send('Failed to add a new row with default values');
-    } else {
-      res.status(200).send('Row with default values added successfully');
+      res.status(500).json({ error: error.message });
+      return;
     }
+    res.json(results);
   });
 });
 
@@ -170,6 +156,32 @@ app.post('/deleteProduct', (req, res) => {
     }
   });
 });
+
+// app.post('/addUser', (req, res) => {
+//   var user  = {
+//     strMobile: req.body.strMobile,
+//     strName: req.body.strName,
+//     strUsername: req.body.strUsername,
+//     strPassword: req.body.strPassword,
+//     strFamily: req.body.strFamily,
+//     };
+//   var query = "INSERT INTO `user_admin` SET ?"
+//   connection.query(query,user, (error, results, fields) => {
+//     if (error) {
+//       res.status(500).send('Failed to add a new row with default values');
+//     } else {
+//       res.status(200).json({
+//         result: true,
+//          message: 'sign up successful', 
+//          id: user.id ,
+//          strToken: user.strToken,
+//          strMobile: user.strMobile,
+//          strName: user.strName,
+//          strFamily: user.strFamily,
+//        });    }
+//   });
+// });
+
 
 // app.post('/addDefaultRow', (req, res) => {
 //   const query = `INSERT INTO products (iProduct, strTitle, sreDetail, strImage, fWeight, fHeight, iPrice, strSummery, iCode, bActive, iCategory) VALUES (NULL, 'test', 'test', 'test', 3.2, 3333, 44, 'test', 1, 1, 5)`;
