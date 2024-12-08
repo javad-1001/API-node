@@ -8,7 +8,6 @@ const app = express();
 
 const PORT = 5000;
 
-
 app.use(bodyParser.json());
 
 
@@ -19,17 +18,15 @@ var mysql = require('mysql');
 const e = require('express');
 
 
-
-
-
-
 var connection = mysql.createConnection({
   host: 'localhost',
   user: 'javad',
   password: 'javad',
-  database: 'qrond'
+  database: 'behdood_db'
 });
 
+
+// login for admin
 app.post('/login', (req, res) => {
   const { strUsername, strPassword } = req.body;
   const query = `SELECT * FROM user_admin WHERE strUsername = ? AND strPassword = ?`;
@@ -54,6 +51,102 @@ app.post('/login', (req, res) => {
       });
     } else {
       res.status(401).json({ result: false, error: 'Invalid credentials' });
+    }
+  });
+});
+
+// get all products
+app.get('/getAllProducts', (req, res) => {
+  const query = 'SELECT * FROM products';
+  connection.query(query, (error, results) => {
+    if (error) {
+      res.status(500).json({ error: error.message });
+      return;
+    }
+    res.json(results);
+  });
+});
+
+// get all category
+app.get('/getAllCategories', (req, res) => {
+  const query = 'SELECT * FROM categories';
+  connection.query(query, (error, results) => {
+    if (error) {
+      res.status(500).json({ error: error.message });
+      return;
+    }
+    res.json(results);
+  });
+});
+
+// add product for admin 
+app.post('/addProduct', (req, res) => {
+  var product  = {
+    strTitle: req.body.strTitle,
+    strDetail: req.body.strDetail,
+    fWeight: req.body.fWeight,
+    fHeight: req.body.fHeight,
+    iPrice: req.body.iPrice,
+    strImage: req.body.strImage,
+    strSummery: req.body.strSummery,
+    iCode: req.body.iCode,
+    bActive: req.body.bActive,
+    iCategory: req.body.iCategory
+    };
+  var query = "INSERT INTO `products` SET ?"
+  connection.query(query,product, (error, results, fields) => {
+    if (error) {
+      console.error(error);
+      res.status(401).json({ result: false, error: 'Invalid credentials' });
+    } else {
+      res.status(200).json({
+        result: true,
+        message: 'added successful',
+      });
+    }
+  });
+});
+
+// delete product
+app.post('/deleteProduct', (req, res) => {
+  var product  = {
+    iProduct: req.body.iProduct
+    };
+  var query = "DELETE FROM products WHERE products.?"
+  connection.query(query,product, (error, results, fields) => {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Failed to delete a new row with default values');
+    } else {
+      res.status(200).send('Row with default values deleted successfully');
+    }
+  });
+});
+
+// edit product
+app.put('/editProduct/:iProduct', (req, res) => {
+  const iProduct = req.params.iProduct;
+
+  const updatedProduct = {
+    strTitle: req.body.strTitle,
+    strDetail: req.body.strDetail,
+    fWeight: req.body.fWeight,
+    fHeight: req.body.fHeight,
+    iPrice: req.body.iPrice,
+    strImage: req.body.strImage,
+    strSummery: req.body.strSummery,
+    iCode: req.body.iCode,
+    bActive: req.body.bActive,  
+    iCategory: req.body.iCategory
+  };
+
+  const query = "UPDATE products SET ? WHERE iProduct = ?";
+  connection.query(query, [updatedProduct, iProduct], (error, results, fields) => {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Failed to update the product');
+    } else {
+      res.status(200).send('Product updated successfully');
     }
   });
 });
@@ -84,78 +177,24 @@ app.post('/login', (req, res) => {
 //   });
 // });
 
-app.post('/addProduct', (req, res) => {
-  const {  iSellerId, strToken, strMobile, strMobileSchema, iPrice, strPreNumber, bActive, tiOperator, tiStatus, tiType, tiCondition } = req.body;
-  const query = `SELECT * FROM user_admin WHERE iSellerId = ? AND strToken = ?`;
-  connection.query(query, [iSellerId, strToken], (error, results) => {
-    if (error) {
-      res.status(500).json({ error: 'Database error' });
-      return;
-    }
-    if (results.length > 0) {
-      res.status(200).json({
-         result: true,
-          message: 'auth successful', 
-        });
-    } else {
-      res.status(401).json({ result: false, error: 'Invalid credentials' });
-    }
-  });
-});
-
-
-app.get('/getAllProducts', (req, res) => {
-  const query = 'SELECT * FROM products';
-  connection.query(query, (error, results) => {
-    if (error) {
-      res.status(500).json({ error: error.message });
-      return;
-    }
-    res.json(results);
-  });
-});
-
-app.put('/editProduct/:iProduct', (req, res) => {
-  const iProduct = req.params.iProduct;
-
-  const updatedProduct = {
-    strTitle: req.body.strTitle,
-    sreDetail: req.body.sreDetail,
-    fWeight: req.body.fWeight,
-    fHeight: req.body.fHeight,
-    iPrice: req.body.iPrice,
-    strImage: req.body.strImage,
-    strSummery: req.body.strSummery,
-    iCode: req.body.iCode,
-    bActive: req.body.bActive,  
-    iCategory: req.body.iCategory
-  };
-
-  const query = "UPDATE products SET ? WHERE iProduct = ?";
-  connection.query(query, [updatedProduct, iProduct], (error, results, fields) => {
-    if (error) {
-      console.error(error);
-      res.status(500).send('Failed to update the product');
-    } else {
-      res.status(200).send('Product updated successfully');
-    }
-  });
-});
-
-app.post('/deleteProduct', (req, res) => {
-  var product  = {
-    iProduct: req.body.iProduct
-    };
-  var query = "DELETE FROM products WHERE products.?"
-  connection.query(query,product, (error, results, fields) => {
-    if (error) {
-      console.error(error);
-      res.status(500).send('Failed to delete a new row with default values');
-    } else {
-      res.status(200).send('Row with default values deleted successfully');
-    }
-  });
-});
+// app.post('/addProduct', (req, res) => {
+//   const {  iSellerId, strToken, strMobile, strMobileSchema, iPrice, strPreNumber, bActive, tiOperator, tiStatus, tiType, tiCondition } = req.body;
+//   const query = `SELECT * FROM user_admin WHERE iSellerId = ? AND strToken = ?`;
+//   connection.query(query, [iSellerId, strToken], (error, results) => {
+//     if (error) {
+//       res.status(500).json({ error: 'Database error' });
+//       return;
+//     }
+//     if (results.length > 0) {
+//       res.status(200).json({
+//          result: true,
+//           message: 'auth successful', 
+//         });
+//     } else {
+//       res.status(401).json({ result: false, error: 'Invalid credentials' });
+//     }
+//   });
+// });
 
 // app.post('/addUser', (req, res) => {
 //   var user  = {
