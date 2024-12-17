@@ -6,7 +6,7 @@ var cors = require('cors')
 
 const app = express();
 
-const PORT = 5000;
+const PORT = 3000;
 
 app.use(bodyParser.json());
 
@@ -14,17 +14,24 @@ app.use(bodyParser.json());
 app.use(cors())
 
 
-var mysql = require('mysql');
+
+
+var mysql = require('mysql2');
 const e = require('express');
 
 
 var connection = mysql.createConnection({
-  host: 'localhost',
-  user: 'javad',
-  password: 'javad',
-  database: 'behdood_db'
+  host: 'services.irn8.chabokan.net',
+  user: 'behdood232_jennifer',
+  password: 'G8923pYMfFkh',
+  database: 'behdood232_jennifer',
+  port: 2763,  
 });
 
+connection.connect(function(err) {
+  if (err) throw err;
+  console.log("Connected!");
+});
 
 // login for admin
 app.post('/login', (req, res) => {
