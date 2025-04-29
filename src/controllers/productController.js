@@ -2,16 +2,67 @@ const { pool } = require('../config/database');
 
 const getAllProducts = async (req, res) => {
     try {
-        const query = 'SELECT * FROM products';
-        pool.query(query, (error, results) => {
+        const {
+            minPrice,
+            maxPrice,
+            minHeight,
+            maxHeight,
+            category,
+            title
+        } = req.query;
+
+        let query = 'SELECT * FROM products WHERE 1=1';
+        const params = [];
+
+        if (minPrice) {
+            query += ' AND iPrice >= ?';
+            params.push(parseFloat(minPrice));
+        }
+
+        if (maxPrice) {
+            query += ' AND iPrice <= ?';
+            params.push(parseFloat(maxPrice));
+        }
+
+        if (minHeight) {
+            query += ' AND fHeight >= ?';
+            params.push(parseFloat(minHeight));
+        }
+
+        if (maxHeight) {
+            query += ' AND fHeight <= ?';
+            params.push(parseFloat(maxHeight));
+        }
+
+        if (category) {
+            query += ' AND iCategory = ?';
+            params.push(parseInt(category));
+        }
+
+        if (title) {
+            query += ' AND strTitle LIKE ?';
+            params.push(`%${title}%`);
+        }
+
+        pool.query(query, params, (error, results) => {
             if (error) {
-                return res.status(500).json({ error: error.message });
+                console.error('Error fetching products:', error);
+                return res.status(500).json({ 
+                    result: false,
+                    error: error.message 
+                });
             }
-            res.json(results);
+            res.json({
+                result: true,
+                data: results
+            });
         });
     } catch (error) {
         console.error('Error fetching products:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ 
+            result: false,
+            error: 'Internal server error' 
+        });
     }
 };
 
