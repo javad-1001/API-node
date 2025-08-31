@@ -26,7 +26,6 @@ const register = async (req, res) => {
             pool.query(insertQuery, [strName, strEmail, hashedPassword, verificationCode], async (insertErr, insertResult) => {
                 if (insertErr) return res.status(500).json({ error: 'Database error', details: insertErr.message, status: null });
 
-                // وضعیت را 1 می‌دانیم چون الان ثبت کردیم و مقدارش ثابت است
                 const currentStatus = 1;
 
                 try {
@@ -78,38 +77,43 @@ const verifyEmail = (req, res) => {
 
 const login = async (req, res) => {
     const { strUsername, strPassword } = req.body;
-    console.log('Login attempt:', { strUsername }); // Not logging password for security
 
     try {
-        const query = `SELECT * FROM user_admin WHERE strUsername = ? AND strPassword = ?`;
-        pool.query(query, [strUsername, strPassword], (error, results) => {
+        const query = `SELECT * FROM user_admin WHERE strUsername = ?`;
+        pool.query(query, [strUsername], async (error, results) => {
             if (error) {
                 console.error('Database error:', error);
                 return res.status(500).json({ error: 'Database error', details: error.message });
             }
 
-            if (results.length > 0) {
-                const user = results[0];
-                const token = jwt.sign(
-                    { id: user.id },
-                    process.env.JWT_SECRET || 'your_secret_key',
-                    { expiresIn: process.env.JWT_EXPIRES_IN || '1h' }
-                );
-
-                res.status(200).json({
-                    result: true,
-                    message: 'Login successful',
-                    id: user.id,
-                    strToken: token,
-                    strMobile: user.strMobile,
-                    strName: user.strName,
-                    strFamily: user.strFamily,
-                    strEmail: user.strEmail,
-                    status: user.status,
-                });
-            } else {
-                res.status(401).json({ result: false, error: 'Invalid credentials' });
+            if (results.length === 0) {
+                return res.status(401).json({ result: false, error: 'Invalid credentials' });
             }
+
+            const user = results[0];
+
+            const isMatch = await bcrypt.compare(strPassword, user.strPassword);
+            if (!isMatch) {
+                return res.status(401).json({ result: false, error: 'Invalid credentials' });
+            }
+
+            const token = jwt.sign(
+                { id: user.id },
+                process.env.JWT_SECRET || 'your_secret_key',
+                { expiresIn: process.env.JWT_EXPIRES_IN || '1h' }
+            );
+
+            res.status(200).json({
+                result: true,
+                message: 'Login successful',
+                id: user.id,
+                strToken: token,
+                strMobile: user.strMobile,
+                strName: user.strName,
+                strFamily: user.strFamily,
+                strEmail: user.strEmail,
+                status: user.status,
+            });
         });
     } catch (error) {
         console.error('Login error:', error);
